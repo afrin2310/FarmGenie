@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>🌾 FarmGenie — Smart Crop Advisor</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:'Poppins',sans-serif;
+      background:linear-gradient(180deg,#d4fcd3 0%,#ffffff 100%);
+      color:#222;
+      padding:20px;
+      max-width:1100px;
+      margin:auto;
+    }
+    header{text-align:center;margin-bottom:20px}
+    header h1{font-size:2.2rem;color:#126e32}
+    header p{color:#333;font-size:1rem}
+    form{
+      background:#fff;
+      padding:20px;
+      border-radius:14px;
+      box-shadow:0 4px 10px rgba(0,0,0,0.1);
+      display:grid;
+      gap:14px;
+    }
+    label{font-weight:600}
+    select,input{width:100%;padding:8px;border-radius:6px;border:1px solid #ccc}
+    button{
+      padding:10px 18px;
+      border:none;
+      border-radius:8px;
+      background:#2d9e4c;
+      color:white;
+      font-weight:600;
+      cursor:pointer;
+      transition:0.3s;
+    }
+    button:hover{background:#23893f}
+    #results{
+      margin-top:24px;
+    }
+    .card{
+      background:white;
+      border-left:6px solid #2d9e4c;
+      border-radius:10px;
+      padding:16px;
+      margin-bottom:14px;
+      box-shadow:0 3px 8px rgba(0,0,0,0.08);
+      animation:fadeIn 0.7s ease;
+    }
+    @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .card h3{margin-bottom:6px;color:#126e32}
+    .small{font-size:0.9rem;color:#555;margin-top:2px}
+    .icons{font-size:1.4rem}
+    .quote{
+      background:#eaffea;
+      border-radius:8px;
+      padding:8px 12px;
+      margin-top:8px;
+      font-style:italic;
+      font-size:0.95rem;
+      color:#126e32;
+    }
+    footer{text-align:center;margin-top:24px;font-size:0.9rem;color:#555}
+    #pestArea{margin-top:20px}
+    .pest{border-left:6px solid #e45a2b}
+    .action-buttons{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+    @media(max-width:700px){header h1{font-size:1.8rem}}
+  </style>
+</head>
+<body>
+<header>
+  <h1>🌾 FarmGenie</h1>
+  <p>Smart, simple, rule-based crop & pest advisor — no sensors, no ML, just knowledge 🌱</p>
+</header>
+
+<form id="form">
+  <label>Soil Type</label>
+  <select id="soil">
+    <option value="loamy">Loamy</option>
+    <option value="sandy">Sandy</option>
+    <option value="clay">Clay</option>
+  </select>
+
+  <label>Season</label>
+  <select id="season">
+    <option value="kharif">Kharif</option>
+    <option value="rabi">Rabi</option>
+    <option value="zaid">Zaid</option>
+  </select>
+
+  <label>Rainfall Category</label>
+  <select id="rainfall">
+    <option value="low">Low</option>
+    <option value="medium">Medium</option>
+    <option value="high">High</option>
+  </select>
+
+  <label>Plot Size (in hectares)</label>
+  <input id="area" type="number" step="0.1" value="1"/>
+
+  <button type="button" id="recommend">🌱 Get Recommendation</button>
+  <button type="reset">Reset</button>
+</form>
+
+<section id="results"></section>
+
+<section id="pestArea">
+  <h2 style="margin-top:20px;color:#e45a2b;">🐛 Pest & Disease Lookup</h2>
+  <p class="small">Select observed symptom(s):</p>
+  <label><input type="checkbox" class="symp" value="brown spots"> Brown spots on leaves</label><br>
+  <label><input type="checkbox" class="symp" value="white powder"> White powder</label><br>
+  <label><input type="checkbox" class="symp" value="wilting"> Wilting</label><br>
+  <label><input type="checkbox" class="symp" value="holes"> Holes in leaves</label><br>
+  <label><input type="checkbox" class="symp" value="sticky"> Sticky leaves</label><br>
+  <div class="action-buttons">
+    <button id="findPest" type="button">🔍 Identify Issue</button>
+    <button id="clearPest" type="button">Clear</button>
+  </div>
+  <div id="pestResults"></div>
+</section>
+
+<footer>
+  <p>💚 Designed with creativity by Afrin — FarmGenie (Mini Project)</p>
+</footer>
+
+<script>
+const data = {
+  rainfallRank: { low:1, medium:2, high:3 },
+  crops:[
+    {name:"🌽 Maize", soil:["loamy","sandy"], season:["kharif"], minRain:"medium", rate:20, fert:"N:P:K = 120:60:40", tips:"Fast-growing, suitable for moderate rainfall areas."},
+    {name:"🌾 Paddy (Rice)", soil:["clay","loamy"], season:["kharif"], minRain:"high", rate:100, fert:"N:P:K = 120:60:40", tips:"Needs standing water; transplant seedlings."},
+    {name:"🌿 Ragi", soil:["sandy","loamy"], season:["kharif","rabi"], minRain:"low", rate:8, fert:"Apply phosphorus at sowing", tips:"Drought-resistant; grows in poor soils."},
+    {name:"🥜 Groundnut", soil:["sandy","loamy"], season:["kharif"], minRain:"medium", rate:80, fert:"Use Rhizobium culture", tips:"Prefers well-drained light soil."},
+    {name:"🌻 Mustard", soil:["clay","loamy"], season:["rabi"], minRain:"low", rate:5, fert:"Moderate NPK", tips:"Profitable oilseed; low irrigation need."},
+    {name:"🍅 Tomato", soil:["loamy","clay"], season:["zaid","rabi"], minRain:"low", rate:1.5, fert:"High potassium, split application", tips:"Ideal for kitchen gardens & small plots."}
+  ],
+  pests:[
+    {name:"🍂 Leaf Blight", sym:["brown spots","wilting"], advice:"Remove infected leaves & apply copper fungicide."},
+    {name:"🐜 Aphids", sym:["sticky"], advice:"Spray neem oil or soap water; encourage ladybugs."},
+    {name:"🍄 Powdery Mildew", sym:["white powder"], advice:"Use sulfur spray; improve ventilation."},
+    {name:"🪲 Leaf Borer", sym:["holes"], advice:"Use pheromone traps; remove affected leaves."}
+  ],
+  quotes:[
+    "“A farmer’s best friend is knowledge, not technology.” 🌾",
+    "“Smart farming begins with smart decisions.” 🌱",
+    "“Healthy soil grows healthy life.” 🌍",
+    "“Farm with wisdom, harvest with pride.” 🍃"
+  ]
+};
+
+// helper
+function rainOk(crop, rain){
+  return data.rainfallRank[rain] >= data.rainfallRank[crop.minRain];
+}
+
+document.getElementById('recommend').addEventListener('click',()=>{
+  const soil=document.getElementById('soil').value;
+  const season=document.getElementById('season').value;
+  const rain=document.getElementById('rainfall').value;
+  const area=parseFloat(document.getElementById('area').value)||1;
+
+  const matches=data.crops.filter(c=>c.soil.includes(soil)&&c.season.includes(season)&&rainOk(c,rain));
+  const resultDiv=document.getElementById('results');
+  resultDiv.innerHTML='';
+  if(matches.length===0){resultDiv.innerHTML='<div class="card"><p>No perfect match found 🌾. Try adjusting season or soil.</p></div>';return;}
+
+  const q=data.quotes[Math.floor(Math.random()*data.quotes.length)];
+  matches.forEach(c=>{
+    const total=(c.rate*area).toFixed(1);
+    resultDiv.innerHTML+=`
+      <div class="card">
+        <h3>${c.name}</h3>
+        <p class="small">🌱 Soil: ${soil}, 🌦 Season: ${season}, 💧 Rainfall: ${rain}</p>
+        <p class="small">🌾 Seed needed: <b>${total} kg</b> for ${area} ha (rate ${c.rate} kg/ha)</p>
+        <p class="small">🧪 Fertilizer: ${c.fert}</p>
+        <p class="small">💡 Tip: ${c.tips}</p>
+        <div class="quote">${q}</div>
+      </div>`;
+  });
+});
+
+document.getElementById('findPest').addEventListener('click',()=>{
+  const selected=[...document.querySelectorAll('.symp:checked')].map(i=>i.value);
+  const pestDiv=document.getElementById('pestResults');
+  pestDiv.innerHTML='';
+  if(selected.length===0){pestDiv.innerHTML='<div class="card"><p>Select at least one symptom!</p></div>';return;}
+  const found=data.pests.filter(p=>p.sym.some(s=>selected.some(sel=>s.includes(sel))));
+  if(found.length===0){pestDiv.innerHTML='<div class="card pest"><p>No matching pest found 🐛.</p></div>';return;}
+  found.forEach(p=>{
+    pestDiv.innerHTML+=`
+      <div class="card pest">
+        <h3>${p.name}</h3>
+        <p class="small">🩺 Symptoms: ${p.sym.join(', ')}</p>
+        <p class="small">💊 Advice: ${p.advice}</p>
+      </div>`;
+  });
+});
+
+document.getElementById('clearPest').addEventListener('click',()=>{
+  document.querySelectorAll('.symp').forEach(c=>c.checked=false);
+  document.getElementById('pestResults').innerHTML='';
+});
+</script>
+</body>
+</html>
